@@ -1,7 +1,11 @@
 {
   "name": "testcafe-wrapper",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Generate TestCafe unit tests by creating simple yaml files.",
+  "repository": "redfox256/testcafe-wrapper",
+  "engines": {
+    "node": ">= 0.9"
+  },
   "main": "app.js",
   "scripts": {
     "run": "node app.js"

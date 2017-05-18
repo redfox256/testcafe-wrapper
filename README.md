@@ -10,52 +10,36 @@ npm install -g testcafe-wrapper
 ##### Sample yaml file
 ```yaml
 ---
-fixture:     Login Page
-page:        https://xcel-uat.compuscan.co.za/login
+fixture:     Example
+page:        http://devexpress.github.io/testcafe/example/
 
 fields:
-    - identifier:   username
-      selector:     input[name="username"]
+    - identifier:   developer-name
+      selector:     '#developer-name'
       element:      input
       type:         text
-      required:     true
-    - identifier:   password
-      selector:     input[name="password"]
-      element:      input
-      type:         password
-      required:     true
-    - identifier:   login
+    - identifier:   submit
       selector:     button[type="submit"]
       element:      button
       type:         submit
 
-functions:
-    - name:     login
-      logic:
-          - typeText:
-                identifier: username
-                text:       API
-          - typeText:
-                identifier: password
-                text:       dev1
-          - click:
-                identifier: login
-
 tests:
-    - name:         Validate Form
-      logic:
-          - validate:   login
-    - name:         Invalid Username Login
+    - name:         Type in a developer name and click submit
       logic:
           - typeText:
-                identifier: username
-                text:       API
+                identifier: developer-name
+                text:       John Doe
           - click:
-                identifier: login
+                identifier: submit
 
 ```
 
 Generate the code and run the command
 ```
 testcafe-wrapper run
+```
+
+For a list of available commands
+```
+testcafe-wrapper -help
 ```
