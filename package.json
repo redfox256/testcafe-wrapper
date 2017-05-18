@@ -1,6 +1,6 @@
 {
   "name": "testcafe-wrapper",
-  "version": "1.0.3",
+  "version": "1.1.1",
   "description": "Generate TestCafe unit tests by creating simple yaml files.",
   "repository": "redfox256/testcafe-wrapper",
   "keywords": [
@@ -12,12 +12,19 @@
   "engines": {
     "node": ">= 0.9"
   },
-  "main": "app.js",
-  "scripts": {
-    "testcafe-wrapper": "./app.js"
+  "bin": {
+    "testcafe-wrapper": "./bin/testcafe-wrapper.js"
   },
+  "scripts": {
+    "init": "./app.js"
+  },
+  "files": [
+    "templates",
+    "bin"
+  ],
   "author": "redfox256",
   "license": "ISC",
+  "preferGlobal": "true",
   "dependencies": {
     "chalk": "^1.1.3",
     "commander": "^2.9.0",
