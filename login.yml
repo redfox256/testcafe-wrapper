@@ -1,14 +1,3 @@
-# TestCafe Wrapper
-
-Generate TestCafe unit tests by creating simple yaml files.
-
-Install testcafe-wrapper
-```sh
-npm install -g testcafe-wrapper
-```
-
-##### Sample yaml file
-```yaml
 ---
 fixture:     Login Page
 page:        https://xcel-uat.compuscan.co.za/login
@@ -52,10 +41,3 @@ tests:
                 text:       API
           - click:
                 identifier: login
-
-```
-
-Generate the code and run the command
-```
-testcafe-wrapper run
-```
