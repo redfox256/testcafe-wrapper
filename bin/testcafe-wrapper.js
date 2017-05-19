@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const pjson             = require(__dirname + '/../package.json');
 const _                 = require('lodash');
 const yaml              = require('js-yaml');
 const fs                = require('fs-extra');
@@ -41,7 +42,7 @@ let ut_temp;
 
 (async () => {
     program
-        .version('0.0.1')
+        .version(pjson.version)
         .option('--verbose',            'Enable verbose logging')
         .option('-e, --skip-js-errors', 'Ignore javascript errors on the page')
         .option('--speed <n>',          'Specifies the speed of test execution - ranges from 0.1 (slowest) - 1 (fastest) - by default tests run at its fastest', parseFloat)
@@ -87,6 +88,8 @@ let ut_temp;
 
 
 	if (!program.dontRun) {
+        // unit_test_files.push(output_dir + 'login_test.js');
+        // unit_test_files.push(output_dir + 'basicDetail_test.js');
 		run();
 	}
 
