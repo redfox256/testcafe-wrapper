@@ -5,7 +5,13 @@ import { {{ before }} } from './page_objects/login';
 
 const page = new Page();
 
-fixture `{{ fixture }}`
+fixture
+<% if (typeof skip != 'undefined' && skip || undefined) { %>
+.skip
+<% } else if (typeof only != 'undefined' && only || undefined) { %>
+.only
+<% } %>
+`{{ fixture }}`
     .page `{{ page }}`
 <% if (typeof before != 'undefined' && before || undefined) { %>
     .beforeEach(async t => {
@@ -16,7 +22,13 @@ fixture `{{ fixture }}`
 ;
 
 <% _.forEach(tests, function(test) { %>
-test('{{ test.name }}', async t => {
+test
+<% if (test.skip) { %>
+.skip
+<% } else if (test.only) { %>
+.only
+<% } %>
+('{{ test.name }}', async t => {
     console.log('running {{ test.name }}');
     await t
     <% _.forEach(test.logic, function(logic) { %>
@@ -38,17 +50,20 @@ test('{{ test.name }}', async t => {
                 // TODO other fields ,etc dropdowns, checkboxes
             <% }); %>
         <% } else { %>
-            <% _.forEach(logic, function(step) { %>
-                <% if (logic.typeText) { %>
-                    .typeText(page.{{ step.identifier }}, '{{ step.text }}')
-                <% } else if (logic.click) { %>
-                    .click(page.{{ step.identifier }})
-                <% } else if (logic.assert) { %>
-                    ;
-                    const our_value = await page.{{ step.identifier }}.{{ step.property }};
-                    await t.expect('{{ step.expect }}').{{ step.type }}(our_value);
-                <% } %>
-            <% }); %>
+            .{{ logic.action }}
+            <% if (logic.action === 'typeText') { %>
+                (page.{{ logic.identifier }}, '{{ logic.text }}')
+            <% } else if (logic.action === 'click') { %>
+                (page.{{ logic.identifier }}
+                    <% if (logic.withText) { %>
+                        .withText('{{ logic.withText }}')
+                    <% } %>
+                )
+            <% } else if (logic.action === 'expect') { %>
+                (page.{{ logic.identifier }}.{{ logic.property }}).{{ logic.type }}('{{ logic.expect }}')
+            <% } else if (logic.action === 'wait') { %>
+                ({{ logic.timeout }})
+            <% } %>
         <% } %>
     <% }); %>
     ;

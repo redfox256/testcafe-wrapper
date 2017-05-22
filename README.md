@@ -22,8 +22,8 @@ fields:
 tests:
     - name:         Type in a developer name and click submit
       logic:
-          - click:
-                identifier: submit
+          - action      : click
+            identifier  : submit
 ```
 
 Generate the code and run the command
