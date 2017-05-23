@@ -1,6 +1,13 @@
 import { Page } from './page_objects/{{ filename }}';
-<% if (typeof before != 'undefined' && before || undefined) { %>
-import { {{ before }} } from './page_objects/login';
+<% if (typeof include != 'undefined' && include || undefined) { %>
+  <% _.forEach(include, function(file) { %>
+    import * as {{ file }} from './page_objects/{{ file }}';
+  <% }); %>
+<% } %>
+<% if (typeof data != 'undefined' && data || undefined) { %>
+  <% _.forEach(data, function(dataFile) { %>
+    import * as {{ dataFile }} from './data/{{ dataFile }}';
+  <% }); %>
 <% } %>
 
 const page = new Page();
@@ -15,7 +22,6 @@ fixture
     .page `{{ page }}`
 <% if (typeof before != 'undefined' && before || undefined) { %>
     .beforeEach(async t => {
-        console.log('running beforeEach hook {{ before }}');
         await {{ before }}();
     })
 <% } %>
@@ -29,7 +35,6 @@ test
 .only
 <% } %>
 ('{{ test.name }}', async t => {
-    console.log('running {{ test.name }}');
     await t
     <% _.forEach(test.logic, function(logic) { %>
         <% if (logic.validate) { %>
@@ -52,7 +57,7 @@ test
         <% } else { %>
             .{{ logic.action }}
             <% if (logic.action === 'typeText') { %>
-                (page.{{ logic.identifier }}, '{{ logic.text }}')
+                (page.{{ logic.identifier }}, {{ logic.text }})
             <% } else if (logic.action === 'click') { %>
                 (page.{{ logic.identifier }}
                     <% if (logic.withText) { %>
