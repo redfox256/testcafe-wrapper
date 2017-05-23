@@ -1,4 +1,10 @@
 import { Selector, t} from 'testcafe';
+<% if (typeof data != 'undefined' && data || undefined) { %>
+  <% _.forEach(data, function(dataFile) { %>
+    import {{ dataFile }} from '../data/{{ dataFile }}';
+    console.log(valid);
+  <% }); %>
+<% } %>
 
 export class Page {
     constructor () {
@@ -19,9 +25,11 @@ export class Page {
         <% _.forEach(func.logic, function(logic) { %>
             .{{ logic.action }}
             <% if (logic.action === 'typeText') { %>
-                (page.{{ logic.identifier }}, '{{ logic.text }}')
+                (page.{{ logic.identifier }}, {{ logic.text }})
             <% } else if (logic.action === 'click') { %>
                 (page.{{ logic.identifier }})
+            <% } else if (logic.action === 'wait') { %>
+                ({{ logic.timeout }})
             <% } %>
         <% }); %>
         ;

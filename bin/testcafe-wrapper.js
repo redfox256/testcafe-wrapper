@@ -18,27 +18,31 @@ const __workdir = process.env.INIT_CWD + "/";
 // output directories
 const output_dir        = __workdir + 'tests/';
 const page_objects_dir  = output_dir + 'page_objects/'
+const data_dir  				= output_dir + 'data/'
 
 // load templates
 const page_object_template  = fs.readFileSync(__dirname + '/../templates/page_object.js', 'utf8');
 const unit_test_template    = fs.readFileSync(__dirname + '/../templates/unit_test.js', 'utf8');
+const data_template    			= fs.readFileSync(__dirname + '/../templates/data.js', 'utf8');
 
 // allow mustache like templates
 _.templateSettings.interpolate = /{{([\s\S]+?)}}/g;
 
 // load the unit test template
-const compiled_unit_test_template = _.template(unit_test_template);
-
+const compiled_unit_test_template 	= _.template(unit_test_template);
 // load the page object template
 const compiled_page_object_template = _.template(page_object_template);
+// load the data template
+const compiled_data_template 				= _.template(data_template);
 
 // array to keep track of all the unit test filenames
-let unit_test_files       = [];
+let unit_test_files = [];
 
 let filenames_list;
 let file_content;
 let po_temp;
 let ut_temp;
+let data_temp;
 
 (async () => {
     program
@@ -67,14 +71,27 @@ let ut_temp;
 
 	await createDirectoryStructure();
 	if (!program.dontGenerate) {
-		await readYamlDirectory();
+		await readYamlDirectory(__workdir + 'data/');
 		// loop through all the yaml files
 		for (fileIndex in filenames_list) {
 			const file = filenames_list[fileIndex];
 			if (file.substr(-5) === '.yaml') {
 				const filename_no_ext = file.substr(0, file.length -5);
 
-				await readYamlFile(file);
+				await readYamlFile(__workdir + 'data/' + file);
+				await processDataFile(filename_no_ext, file_content);
+				await writeFile(data_dir + filename_no_ext + '.js', data_temp);
+			}
+		}
+
+		await readYamlDirectory(__workdir);
+		// loop through all the yaml files
+		for (fileIndex in filenames_list) {
+			const file = filenames_list[fileIndex];
+			if (file.substr(-5) === '.yaml') {
+				const filename_no_ext = file.substr(0, file.length -5);
+
+				await readYamlFile(__workdir + file);
 				await processFile(filename_no_ext, file_content);
 				await writeFile(page_objects_dir + filename_no_ext + '.js', po_temp);
 				const unit_test_filename = output_dir + filename_no_ext + '_test.js';
@@ -88,16 +105,16 @@ let ut_temp;
 
 
 	if (!program.dontRun) {
-        // unit_test_files.push(output_dir + 'login_test.js');
-        // unit_test_files.push(output_dir + 'basicDetail_test.js');
+        unit_test_files.push(output_dir + 'login_test.js');
+        unit_test_files.push(output_dir + 'basicDetail_test.js');
 		run();
 	}
 
 })();
 
-async function readYamlDirectory() {
+async function readYamlDirectory(directory) {
 	return new Promise(function (resolve, reject) {
-		fs.readdir(__workdir, function(err, filenames) {
+		fs.readdir(directory, function(err, filenames) {
 			if (err) {
 			  log_error(err);
 			  reject(err);
@@ -113,12 +130,13 @@ async function readYamlDirectory() {
 async function createDirectoryStructure() {
 	fs.ensureDir(output_dir, () => { log('created directory ' + output_dir); });
 	fs.ensureDir(page_objects_dir, () => { log('created directory ' + page_objects_dir); });
+	fs.ensureDir(data_dir, () => { log('created directory ' + data_dir); });
 }
 
-async function readYamlFile(filename) {
+async function readYamlFile(file) {
 	return new Promise(function (resolve, reject) {
 		file_content = null;
-		fs.readFile(__workdir + filename, 'utf-8', function(err, content) {
+		fs.readFile(file, 'utf-8', function(err, content) {
 			if (err) {
 			  log_error(err);
 			  reject(err);
@@ -126,7 +144,7 @@ async function readYamlFile(filename) {
 			file_content = content;
 			resolve(file_content);
 		});
-    });
+  });
 }
 
 async function processFile(filename, content) {
@@ -154,9 +172,31 @@ async function processFile(filename, content) {
     }
 }
 
+async function processDataFile(filename, content) {
+    try {
+        // load our data file
+        let data = yaml.safeLoad(content);
+        data.filename = filename;
+
+        // pretty print our json to the console - can be disabled
+        const indentedJson = JSON.stringify(data, null, 4);
+        if (program.verbose) {
+        console.log('\n#######################################################' +
+                    '\n YAML parsed to JSON output for file ' + chalk.inverse(filename + '.yaml') +
+                    '\n#######################################################\n\n' + chalk.yellow(indentedJson) + '\n');
+        }
+
+        // here we save the page object files
+        data_temp = compiled_data_template(data);
+
+    } catch (e) {
+        log_error(e);
+    }
+}
+
 async function writeFile(dest, src) {
 	return new Promise(function (resolve, reject) {
-		fs.writeFile(dest, beautify(src, { max_preserve_newlines: 1 }), function(err) {
+		fs.writeFile(dest, beautify(src, { preserve_newlines: false, break_chained_methods: true }), function(err) {
 			if(err) {
 				log_error('[error] ' + dest);
 				reject(log_error(err));
