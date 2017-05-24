@@ -105,8 +105,8 @@ let data_temp;
 
 
 	if (!program.dontRun) {
-        unit_test_files.push(output_dir + 'login_test.js');
-        unit_test_files.push(output_dir + 'basicDetail_test.js');
+        // unit_test_files.push(output_dir + 'login_test.js');
+        // unit_test_files.push(output_dir + 'basicDetail_test.js');
 		run();
 	}
 

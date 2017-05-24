@@ -2,7 +2,6 @@ import { Selector, t} from 'testcafe';
 <% if (typeof data != 'undefined' && data || undefined) { %>
   <% _.forEach(data, function(dataFile) { %>
     import {{ dataFile }} from '../data/{{ dataFile }}';
-    console.log(valid);
   <% }); %>
 <% } %>
 
