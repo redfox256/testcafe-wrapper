@@ -1,4 +1,4 @@
-import { Page } from './page_objects/{{ filename }}';
+import * as current from './page_objects/{{ filename }}';
 <% if (typeof include != 'undefined' && include || undefined) { %>
   <% _.forEach(include, function(file) { %>
     import * as {{ file }} from './page_objects/{{ file }}';
@@ -6,11 +6,11 @@ import { Page } from './page_objects/{{ filename }}';
 <% } %>
 <% if (typeof data != 'undefined' && data || undefined) { %>
   <% _.forEach(data, function(dataFile) { %>
-    import * as {{ dataFile }} from './data/{{ dataFile }}';
+    import {{ dataFile }} from './data/{{ dataFile }}';
   <% }); %>
 <% } %>
 
-const page = new Page();
+const page = new current.Page();
 
 fixture
 <% if (typeof skip != 'undefined' && skip || undefined) { %>
@@ -22,13 +22,24 @@ fixture
     .page `{{ page }}`
 <% if (typeof before != 'undefined' && before || undefined) { %>
     .beforeEach(async t => {
-        await {{ before }}();
+        <% _.forEach(before, function(fBefore) { %>
+            console.log('running before fixture: {{ fBefore }}');
+            await {{ fBefore }}();
+        <% }); %>
     })
 <% } %>
 ;
 
 <% _.forEach(tests, function(test) { %>
 test
+<% if (test.before) { %>
+    .before(async t => {
+        <% _.forEach(test.before, function(tBefore) { %>
+            console.log('running before test: {{ tBefore }}');
+            await {{ tBefore }}();
+        <% }); %>
+    })
+<% } %>
 <% if (test.skip) { %>
 .skip
 <% } else if (test.only) { %>
@@ -65,7 +76,7 @@ test
                     <% } %>
                 )
             <% } else if (logic.action === 'expect') { %>
-                (page.{{ logic.identifier }}.{{ logic.property }}).{{ logic.type }}('{{ logic.expect }}')
+                (page.{{ logic.identifier }}.{{ logic.property }}).{{ logic.type }}({{ logic.expect }})
             <% } else if (logic.action === 'wait') { %>
                 ({{ logic.timeout }})
             <% } %>
