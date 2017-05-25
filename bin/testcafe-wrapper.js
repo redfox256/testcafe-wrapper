@@ -39,7 +39,6 @@ const compiled_data_template 				= _.template(data_template);
 let unit_test_files = [];
 
 let filenames_list;
-let file_content;
 let po_temp;
 let ut_temp;
 let data_temp;
@@ -63,36 +62,30 @@ let data_temp;
                                         '\n Arguments' +
                                         '\n###########\n\n' + JSON.stringify(program.options, null, 4)));
 
-
-	// delete our directory structure should it exist - we will recreate it below
-	// TODO check why this doesnt work
-	// fs.emptyDir(output_dir, () => { log('done cleaning up ' + output_dir); });
-	// fs.emptyDir(page_objects_dir, () => { log('done cleaning up ' + page_objects_dir); });
-
 	await createDirectoryStructure();
 	if (!program.dontGenerate) {
-		await readYamlDirectory(__workdir + 'data/');
-		// loop through all the yaml files
-		for (fileIndex in filenames_list) {
-			const file = filenames_list[fileIndex];
+		const dataFiles = await readYamlDirectory(__workdir + 'data/');
+		// loop through all the data yaml files
+		for (fileIndex in dataFiles) {
+			const file = dataFiles[fileIndex];
 			if (file.substr(-5) === '.yaml') {
 				const filename_no_ext = file.substr(0, file.length -5);
 
-				await readYamlFile(__workdir + 'data/' + file);
-				await processDataFile(filename_no_ext, file_content);
+				const file_content = await readYamlFile(__workdir + 'data/' + file);
+				processDataFile(filename_no_ext, file_content);
 				await writeFile(data_dir + filename_no_ext + '.js', data_temp);
 			}
 		}
 
-		await readYamlDirectory(__workdir);
-		// loop through all the yaml files
-		for (fileIndex in filenames_list) {
-			const file = filenames_list[fileIndex];
+		const yamlFiles = await readYamlDirectory(__workdir);
+		// loop through all the unit test yaml files
+		for (fileIndex in yamlFiles) {
+			const file = yamlFiles[fileIndex];
 			if (file.substr(-5) === '.yaml') {
 				const filename_no_ext = file.substr(0, file.length -5);
 
-				await readYamlFile(__workdir + file);
-				await processFile(filename_no_ext, file_content);
+				const file_content = await readYamlFile(__workdir + file);
+				processTestFile(filename_no_ext, file_content);
 				await writeFile(page_objects_dir + filename_no_ext + '.js', po_temp);
 				const unit_test_filename = output_dir + filename_no_ext + '_test.js';
 				await writeFile(unit_test_filename, ut_temp);
@@ -121,7 +114,6 @@ async function readYamlDirectory(directory) {
 			}
 
 			log(filenames);
-			filenames_list = filenames;
 			resolve(filenames);
 		});
 	});
@@ -135,19 +127,17 @@ async function createDirectoryStructure() {
 
 async function readYamlFile(file) {
 	return new Promise(function (resolve, reject) {
-		file_content = null;
 		fs.readFile(file, 'utf-8', function(err, content) {
 			if (err) {
 			  log_error(err);
 			  reject(err);
 			}
-			file_content = content;
-			resolve(file_content);
+			resolve(content);
 		});
   });
 }
 
-async function processFile(filename, content) {
+function processFile(filename, content) {
     try {
         // load our data file
         let data = yaml.safeLoad(content);
@@ -160,6 +150,17 @@ async function processFile(filename, content) {
                     '\n YAML parsed to JSON output for file ' + chalk.inverse(filename + '.yaml') +
                     '\n#######################################################\n\n' + chalk.yellow(indentedJson) + '\n');
         }
+
+        return data;
+
+    } catch (e) {
+        log_error(e);
+    }
+}
+
+function processTestFile(filename, content) {
+    try {
+        const data = processFile(filename, content);
 
         // here we save the page object files
         po_temp = compiled_page_object_template(data);
@@ -172,19 +173,9 @@ async function processFile(filename, content) {
     }
 }
 
-async function processDataFile(filename, content) {
+function processDataFile(filename, content) {
     try {
-        // load our data file
-        let data = yaml.safeLoad(content);
-        data.filename = filename;
-
-        // pretty print our json to the console - can be disabled
-        const indentedJson = JSON.stringify(data, null, 4);
-        if (program.verbose) {
-        console.log('\n#######################################################' +
-                    '\n YAML parsed to JSON output for file ' + chalk.inverse(filename + '.yaml') +
-                    '\n#######################################################\n\n' + chalk.yellow(indentedJson) + '\n');
-        }
+        const data = processFile(filename, content);
 
         // here we save the page object files
         data_temp = compiled_data_template(data);
