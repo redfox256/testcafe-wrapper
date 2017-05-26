@@ -9,6 +9,8 @@ const createTestCafe    = require('testcafe');
 const chalk             = require('chalk');
 const program           = require('commander');
 const beautify          = require('js-beautify').js_beautify;
+const testrail          = require('./testrail');
+const stream            = require('stream');
 
 // Set env var for ORIGINAL cwd
 // before anything touches it
@@ -18,12 +20,12 @@ const __workdir = process.env.INIT_CWD + "/";
 // output directories
 const output_dir        = __workdir + 'tests/';
 const page_objects_dir  = output_dir + 'page_objects/'
-const data_dir  				= output_dir + 'data/'
+const data_dir  		= output_dir + 'data/'
 
 // load templates
 const page_object_template  = fs.readFileSync(__dirname + '/../templates/page_object.js', 'utf8');
 const unit_test_template    = fs.readFileSync(__dirname + '/../templates/unit_test.js', 'utf8');
-const data_template    			= fs.readFileSync(__dirname + '/../templates/data.js', 'utf8');
+const data_template    		= fs.readFileSync(__dirname + '/../templates/data.js', 'utf8');
 
 // allow mustache like templates
 _.templateSettings.interpolate = /{{([\s\S]+?)}}/g;
@@ -33,7 +35,7 @@ const compiled_unit_test_template 	= _.template(unit_test_template);
 // load the page object template
 const compiled_page_object_template = _.template(page_object_template);
 // load the data template
-const compiled_data_template 				= _.template(data_template);
+const compiled_data_template 		= _.template(data_template);
 
 // array to keep track of all the unit test filenames
 let unit_test_files = [];
@@ -52,11 +54,11 @@ let data_temp;
         .option('-p, --proxy',          'Enable proxy')
         .option('-x, --dont-generate',  'Will not generate test files but instead run any tests in the generated directory')
         .option('-y, --dont-run',       'Will generate test files but not run them')
+        .option('-t, --testrail',       'Enable Testrail integration')
         .option('chrome',               'Test in Chrome')
         .option('firefox',              'Test in Firefox')
         .option('ie',                   'Test in Internet Explorer')
         .parse(process.argv);
-
 
     if (program.verbose) console.log(chalk.cyan('\n###########' +
                                         '\n Arguments' +
@@ -198,6 +200,17 @@ async function writeFile(dest, src) {
 	});
 }
 
+class JSONStream extends stream.Writable {
+     _write(chunk, encoding, next) {
+        const results = JSON.parse(chunk.toString());
+        log(results);
+
+        testrail.processTestRailResults(results);
+
+        next();
+    }
+}
+
 function run() {
     let testcafe = null;
     let browsers = [];
@@ -219,6 +232,11 @@ function run() {
 
             runner.browsers(browsers)
 
+            if (program.testrail) {
+                const stream = new JSONStream();
+                runner.reporter('json', stream);
+            }
+
             if (program.proxy) runner.useProxy('10.100.10.10:3128');
 
             return runner.run({
@@ -234,7 +252,6 @@ function run() {
             log_error(error)
             testcafe.close();
         });
-
 }
 
 function log(msg) {
