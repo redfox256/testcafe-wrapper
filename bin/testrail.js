@@ -1,10 +1,12 @@
+const utils     = require('./utils');
 const request   = require('superagent');
 const moment    = require('moment');
+const fs        = require('fs-extra');
+const chalk     = require('chalk');
+const nconf     = require('nconf');
 
 process.env.INIT_CWD = process.cwd();
 const __workdir = process.env.INIT_CWD + "/";
-
-const config    = require(__workdir + 'conf/testrail-conf');
 
 const parent_section_name          = 'Automation Testing';
 const parent_section_description   = 'Automate where possible';
@@ -12,30 +14,47 @@ const parent_section_description   = 'Automate where possible';
 async function sendRequest(method, url, data) {
     return new Promise(function (resolve, reject) {
         let req;
-        let uri = config.host + 'index.php?/api/v2/' + url;
+        let uri = nconf.get('host') + 'index.php?/api/v2/' + url;
         if (method === 'POST') {
             req = request
                     .post(uri)
                     .send(data);
-
         }
         else {
             req = request.get(uri);
         }
 
         req.set('content-type', 'application/json')
-            .auth(config.username, config.password)
+            .auth(nconf.get('username'), nconf.get('password'))
             .end(function(err, res) {
                 if (err) {
-                    console.log(err);
+                    utils.log_error(err);
                     reject(err);
                 }
                 resolve(res.body);
             });
+    })
+    .catch((err) => {
+        utils.log_custom(chalk.red.bold(err));
     });
 }
 
 module.exports = {
+
+    readConfigFile: async function() {
+    	return new Promise(function (resolve, reject) {
+            nconf.argv()
+               .env()
+               .file({ file: __workdir + 'conf/testrail-conf.json' });
+
+           if (nconf.get('host')) return resolve(true);
+           else return resolve(false);
+        })
+        .catch((err) => {
+            utils.log_custom(err);
+            return false;
+        });
+    },
 
     processTestRailResults: async function(results) {
         const test_run = await this.addTestRun(moment().format("dddd, MMMM Do YYYY, h:mm:ss a"));
@@ -53,7 +72,7 @@ module.exports = {
     },
 
     getSections: async function() {
-        const sections = await sendRequest('GET', 'get_sections/' + config.projectId);
+        const sections = await sendRequest('GET', 'get_sections/' + nconf.get('projectId'));
         return sections;
     },
 
@@ -83,11 +102,11 @@ module.exports = {
             "parent_id": parent_section_id
         };
 
-        return await sendRequest('POST', 'add_section/' + config.projectId, data);
+        return await sendRequest('POST', 'add_section/' + nconf.get('projectId'), data);
     },
 
     getTestCaseForSection: async function(section_id, case_title) {
-        const test_cases = await sendRequest('GET', 'get_cases/' + config.projectId + '&section_id=' + section_id);
+        const test_cases = await sendRequest('GET', 'get_cases/' + nconf.get('projectId') + '&section_id=' + section_id);
         if (test_cases) {
             for (index in test_cases) {
                 const test_case = test_cases[index];
@@ -135,7 +154,7 @@ module.exports = {
             "name": run_name
         };
 
-        return await sendRequest('POST', 'add_run/' + config.projectId, data);
+        return await sendRequest('POST', 'add_run/' + nconf.get('projectId'), data);
     }
 
 };

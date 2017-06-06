@@ -35,7 +35,7 @@ testcafe-wrapper
 Created conf/testrail-conf.json
 ```json
 {
-    "host": "http://[testrail_url]/",
+    "host": "http://[testrail_url]/testrail/",
     "username": "testrail_username",
     "password": "testrail_password",
     "projectId": 1

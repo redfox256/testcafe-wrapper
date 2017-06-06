@@ -24,6 +24,17 @@ export class Page {
         <% _.forEach(func.logic, function(logic) { %>
             <% if (logic.action === 'custom') { %>
                 {{ logic.command }}
+            <% } else if (logic.action === 'date') { %>
+                .wait(1000);
+                var clientFunction = ClientFunction(() => {
+                    <% _.forEach(fields, function(field) { %>
+                        <% if (logic.identifier === field.identifier) { %>
+                            $('{{ field.selector }}').pickadate('set').set('select', [{{ logic.year }}, {{ logic.month }}, {{ logic.day }}])
+                        <% } %>
+                    <% }); %>
+                });
+                await clientFunction();
+                t
             <% } else { %>
                 .{{ logic.action }}
                 <% if (logic.action === 'typeText') { %>
